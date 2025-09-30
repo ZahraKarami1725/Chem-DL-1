@@ -38,7 +38,6 @@ def extract_functional_groups(smiles: str) -> List[str]:
    Converting IR Spectrum(1D) to image(2D) for CNN. Hypothesize: IR Spectrum => wavenumber,intensity
     """
 def spectrum_to_image(ir_spectrum: np.ndarray, img_size: tuple = (224, 224)) -> np.ndarray:
-
     wavenumbers = ir_spectrum[0]  #  4000-400 cm^-1
     intensities = ir_spectrum[1]
 
@@ -123,19 +122,13 @@ if __name__ == "__main__":
     output = model(dummy_input)
     print(f"Output shape: {output.shape}")  # torch.Size([1, 5])
     
-    
-    
-import torch
-import torch.nn as nn
-import torch.optim as optim
+# Difine model with pytorch = model1
+import torch.optim as optimiz
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 import numpy as np
-from model import IRCNN
-from utils import load_dataset
 
-# Train
 # parameters
 BATCH_SIZE = 32
 EPOCHS = 10
@@ -225,15 +218,13 @@ def predict_group(model_path: str, ir_spectrum: np.ndarray):
 # dummy_spectrum = np.array([[np.linspace(400, 4000, 1000), np.random.rand(1000)]])  # [wavenum, int]
 # print(predict_group('ir_cnn_model.pth', dummy_spectrum)) 
 
-# Creating model with Method 2 using Tensorflow:
-
-    import tensorflow as tf
+# Creating model2 with second method using Tensorflow:
+import tensorflow as tf
 from tensorflow.keras import layers, models
 
 """
-    CNN model for classifying IR spectral images.
-    """
-
+CNN model for classifying IR spectral images.
+"""
 #Input: (batch, 224, 224, 1) #-Gray image of the spectrum.
 #Output: num_classes (5 functional groups).
 def create_ircnn_model(num_classes=5):
@@ -250,23 +241,16 @@ def create_ircnn_model(num_classes=5):
         layers.Dense(num_classes, activation='softmax')
     ])
     return model
+model = create_ircnn_model(num_classes=5)
 
-# Test model 2
-if __name__ == "__main__":
-    model = create_ircnn_model(num_classes=5)
-    model.summary()  # Show model structure
-# Output: something like 1.5M parameters and layers
+# Show model structure
+model.summary()  # Output: something like 1.5M parameters and layers
 
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 import numpy as np
-from model import create_ircnn_model
-from utils import load_dataset, FUNCTIONAL_GROUPS
-
-
-# Train
 # parameters
 BATCH_SIZE = 32
 EPOCHS = 10
@@ -282,21 +266,21 @@ def train_model():
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Create model
-    model = create_ircnn_model(num_classes=len(FUNCTIONAL_GROUPS))
-    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE),
+    # Create model2
+    model2 = create_ircnn_model(num_classes=len(FUNCTIONAL_GROUPS))
+    model2.compile(optimizer=Adam(learning_rate=LEARNING_RATE),
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
     # Train
-    history = model.fit(X_train, y_train,
+    history = model2.fit(X_train, y_train,
                        batch_size=BATCH_SIZE,
                        epochs=EPOCHS,
                        validation_data=(X_test, y_test),
                        verbose=1)
 
     # Evaluation
-    y_pred = model.predict(X_test)
+    y_pred = model2.predict(X_test)
     y_pred_classes = np.argmax(y_pred, axis=1)
     y_true_classes = np.argmax(y_test, axis=1)
 
@@ -307,16 +291,12 @@ def train_model():
 
     #  saveing model
     model.save('ir_cnn_model.h5')
-    return model
+    return model2
 
 if __name__ == "__main__":
-    model = train_model()
+    model2 = train_model()
 
  #Prediction
-import tensorflow as tf
-import numpy as np
-from utils import spectrum_to_image, FUNCTIONAL_GROUPS
-
 def predict_group(model_path: str, ir_spectrum: np.ndarray):
     # Loadind data
     model = tf.keras.models.load_model(model_path)
@@ -326,7 +306,7 @@ def predict_group(model_path: str, ir_spectrum: np.ndarray):
     input_tensor = np.expand_dims(img, axis=0)  # shape: (1, 224, 224, 1)
 
     # prediction
-    pred = model.predict(input_tensor)
+    pred = model2.predict(input_tensor)
     pred_idx = np.argmax(pred, axis=1)[0]
     group_names = list(FUNCTIONAL_GROUPS.keys())
     predicted_group = group_names[pred_idx]
@@ -362,3 +342,5 @@ def extract_features(smiles: str) -> dict:
         'mol_weight': Descriptors.MolWt(mol),
         'num_hba': rdMolDescriptors.CalcNumHBA(mol),
         'functional_groups': extract_functional_groups(smiles)
+        
+    }
